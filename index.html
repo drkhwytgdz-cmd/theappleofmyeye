@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#fff5f7">
+  <meta name="description" content="The Apple of My Eye — 一页写给恋人的粉色纪念日记">
+  <title>The Apple of My Eye</title>
+
+  <!-- 已移除 Google Fonts：全部使用本地系统字体，部署时不依赖外部网络 -->
+
+  <style>
+    :root {
+      --paper: #fdf5f0;
+      --blush: #ffb7c5;
+      --rose: #ff8a9b;
+      --wine: #8b3a4a;
+      --gold: #e8d5b5;
+      --ink: #63323d;
+      --shadow: 0 18px 45px rgba(139, 58, 74, .15), 0 3px 10px rgba(139, 58, 74, .09);
+      /* 本地系统字体：无需下载字体文件 */
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --script: "Bradley Hand", "Apple Chancery", cursive;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--ink);
+      font-family: var(--sans);
+      /* // 替换背景图：将照片放入 images 文件夹，重命名为 background.jpg */
+      background-image:
+        linear-gradient(rgba(255, 183, 197, .36), rgba(253, 245, 240, .36)),
+        url("images/background.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+
+    /* 旧日记纸张的细颗粒感；不拦截任何点击 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: .16;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.17'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+
+    body.gate-locked { overflow: hidden; }
+
+    /* 进入验证：通过前覆盖整页，背景模糊但仍保留日记的朦胧轮廓 */
+    .answer-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: linear-gradient(145deg, rgba(255,245,247,.82), rgba(255,232,238,.76));
+      /* 兼容修改：使用更实的遮罩颜色替代 backdrop-filter */
+      transition: opacity .65s ease, visibility .65s ease;
+    }
+    .answer-gate.is-leaving { opacity: 0; visibility: hidden; }
+
+    .gate-card {
+      position: relative;
+      width: min(520px, 100%);
+      padding: clamp(2.5rem, 7vw, 4.2rem) clamp(1.4rem, 6vw, 3.5rem) 2.7rem;
+      overflow: visible;
+      border: 1px solid rgba(232,213,181,.9);
+      border-radius: 7px;
+      text-align: center;
+      background:
+        repeating-linear-gradient(transparent 0 33px, rgba(255,183,197,.13) 34px),
+        rgba(253,245,240,.96);
+      box-shadow: 0 26px 80px rgba(139,58,74,.2), 0 3px 10px rgba(139,58,74,.1);
+      transform: translateY(0) rotate(-.35deg);
+      transition: transform .65s cubic-bezier(.2,.8,.2,1), opacity .5s ease;
+    }
+    .answer-gate.is-leaving .gate-card { transform: translateY(-34px) rotate(.8deg); opacity: 0; }
+    .gate-card::before {
+      content: "a tiny question for you";
+      display: block;
+      margin-bottom: 1rem;
+      color: var(--rose);
+      font: 600 1.05rem/1 var(--script);
+    }
+    .gate-question {
+      margin: 0 auto 2rem;
+      max-width: 13em;
+      color: var(--wine);
+      font: 700 clamp(1.55rem, 5vw, 2.25rem)/1.45 var(--serif);
+      text-wrap: balance;
+    }
+    .gate-form { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; }
+    .gate-input {
+      min-width: 0;
+      height: 50px;
+      padding: 0 1rem;
+      border: 1px solid rgba(139,58,74,.28);
+      border-radius: 5px;
+      outline: none;
+      color: var(--wine);
+      background: rgba(255,255,255,.72);
+      font: 600 1rem/1 var(--sans);
+      box-shadow: inset 0 2px 7px rgba(139,58,74,.05);
+      transition: border-color .25s ease, box-shadow .25s ease;
+    }
+    .gate-input::placeholder { color: rgba(139,58,74,.42); }
+    .gate-input:focus { border-color: var(--rose); box-shadow: 0 0 0 4px rgba(255,183,197,.22); }
+    .gate-input.is-wrong { animation: gate-shake .35s ease; border-color: var(--rose); }
+    .gate-submit {
+      height: 50px;
+      padding: 0 1.35rem;
+      border: 1px solid rgba(139,58,74,.16);
+      border-radius: 5px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blush), var(--rose));
+      box-shadow: 0 6px 16px rgba(139,58,74,.18);
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .gate-submit:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(139,58,74,.22); }
+    .gate-submit:active { transform: translateY(0); }
+    /* 答案错误时显示的中文提示文字 */
+    .gate-error {
+      min-height: 1.5em;
+      margin: .85rem 0 0;
+      color: #8b3a4a;
+      font-size: .9rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+    .gate-error.is-visible { opacity: 1; }
+    .gate-heart { --sticker-size: 62px; --sticker-rotate: -8deg; top: -26px; left: -22px; }
+    .gate-star { --sticker-size: 48px; --sticker-rotate: 7deg; right: -15px; bottom: -15px; }
+
+    /* 角落音乐播放器：沿用贴纸的粉色旧唱片质感 */
+    .music-player {
+      position: fixed;
+      right: max(1rem, env(safe-area-inset-right));
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      max-width: min(320px, calc(100vw - 2rem));
+      padding: .55rem .8rem .55rem .55rem;
+      border: 1px solid rgba(232,213,181,.92);
+      border-radius: 6px;
+      background: rgba(253,245,240,.9);
+      box-shadow: 0 10px 30px rgba(139,58,74,.15), 0 2px 7px rgba(139,58,74,.08);
+      /* 兼容修改：移除 backdrop-filter，保留半透明纸张背景 */
+      transition: transform .3s ease, box-shadow .3s ease, opacity .3s ease;
+    }
+    .music-player:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(139,58,74,.2); }
+    .music-toggle {
+      flex: 0 0 46px;
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid rgba(139,58,74,.2);
+      border-radius: 50%;
+      color: var(--wine);
+      background: radial-gradient(circle at center, var(--gold) 0 9%, var(--wine) 10% 14%, var(--blush) 15% 49%, var(--rose) 50% 53%, var(--paper) 54% 61%, var(--blush) 62%);
+      box-shadow: inset 0 0 0 3px rgba(253,245,240,.45), 0 4px 10px rgba(139,58,74,.16);
+      cursor: pointer;
+    }
+    .music-toggle:focus-visible { outline: 2px dashed var(--wine); outline-offset: 4px; }
+    .music-note {
+      width: 21px;
+      height: 21px;
+      overflow: visible;
+      filter: drop-shadow(0 1px 0 rgba(253,245,240,.7));
+      animation: note-waiting 1.35s ease-in-out infinite;
+    }
+    .music-player.is-playing .music-toggle { animation: record-spin 4s linear infinite; }
+    .music-player.is-playing .music-note { animation: none; }
+    .music-info { min-width: 0; text-align: left; }
+    .music-label { display: block; margin-bottom: .2rem; color: rgba(139,58,74,.68); font: 600 .72rem/1 var(--script); }
+    .music-title {
+      display: block;
+      overflow: hidden;
+      color: var(--wine);
+      font-size: .82rem;
+      font-weight: 700;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @keyframes note-waiting { 50% { transform: translateY(-4px) rotate(5deg); } }
+    @keyframes record-spin { to { transform: rotate(360deg); } }
+
+    @keyframes gate-shake {
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    #ribbon-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      filter: drop-shadow(0 0 9px rgba(255, 138, 155, .35));
+    }
+
+    .hero {
+      position: relative;
+      z-index: 4;
+      min-height: 92vh;
+      min-height: 92svh; /* 新单位；上一行是旧浏览器回退 */
+      display: grid;
+      place-items: center;
+      padding: 5rem 1.25rem 8rem;
+      text-align: center;
+    }
+
+    .hero-inner { position: relative; max-width: 980px; }
+    .eyebrow {
+      margin: 0 0 1rem;
+      color: var(--wine);
+      font: 600 clamp(1rem, 2vw, 1.35rem)/1 var(--script);
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      color: var(--wine);
+      font: italic 700 clamp(3.3rem, 10vw, 8rem)/.95 var(--serif);
+      letter-spacing: 0;
+      text-wrap: balance;
+      text-shadow: 0 0 18px rgba(255,183,197,.75), 0 3px 0 rgba(255,255,255,.78);
+    }
+
+    /* 杂志剪贴式标题纸条：不规则边缘比常规卡片更接近手工 scrapbook */
+    .title-wrap::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      left: -4%;
+      right: -4%;
+      top: 15%;
+      bottom: 2%;
+      background: rgba(253,245,240,.76);
+      /* 兼容修改：移除仅用于装饰撕边的 clip-path */
+      box-shadow: 5px 6px 0 rgba(255,138,155,.2);
+      transform: rotate(-1.3deg);
+    }
+    .title-wrap::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      left: 12%;
+      right: 8%;
+      bottom: -13px;
+      height: 9px;
+      border-top: 4px solid var(--rose);
+      border-radius: 50%;
+      transform: rotate(.8deg) skewX(-8deg);
+      opacity: .78;
+    }
+
+    .hero-ticket { --sticker-size: 118px; --sticker-rotate: -7deg; left: -86px; top: -72px; opacity: .82; }
+    .hero-butterfly { --sticker-size: 72px; --sticker-rotate: 8deg; right: -98px; top: 34%; }
+    .hero-sparkles { --sticker-size: 80px; --sticker-rotate: -4deg; left: -105px; bottom: -60px; opacity: .8; }
+
+    .date-range {
+      margin: 1.6rem 0 0;
+      color: var(--wine);
+      font: 600 clamp(.85rem, 1.7vw, 1.15rem)/1.5 var(--serif);
+      letter-spacing: 0;
+    }
+
+    .scroll-note {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      display: grid;
+      gap: .5rem;
+      justify-items: center;
+      transform: translateX(-50%);
+      color: rgba(139,58,74,.68);
+      font-size: .72rem;
+    }
+
+    .scroll-note::after {
+      content: "";
+      width: 1px;
+      height: 42px;
+      background: linear-gradient(var(--rose), transparent);
+      animation: breathe 1.8s ease-in-out infinite;
+    }
+
+    /* 全站贴纸共用同一纸张纹理、手绘描边和阴影，不参与点击 */
+    .sticker {
+      position: absolute;
+      z-index: 5;
+      display: block;
+      width: var(--sticker-size, 58px);
+      height: var(--sticker-size, 58px);
+      overflow: visible;
+      pointer-events: none;
+      filter: url(#sticker-texture);
+      transform: rotate(var(--sticker-rotate, 0deg));
+      transform-origin: center;
+      opacity: .94;
+    }
+    .sticker use { stroke-linecap: round; stroke-linejoin: round; }
+    .title-wrap, .date-wrap, .ending-wrap { position: relative; display: inline-block; }
+    .hero-title-sticker { --sticker-size: 62px; --sticker-rotate: 7deg; top: -25px; right: -48px; }
+    .hero-date-sticker { --sticker-size: 48px; --sticker-rotate: -7deg; top: -15px; right: -53px; }
+    .memory-sticker { --sticker-size: 48px; top: -13px; right: -16px; }
+    .memory:nth-of-type(even) .memory-sticker { right: auto; left: -17px; }
+    .journey-sticker { z-index: -1; opacity: .72; }
+    .sticker-camera { --sticker-size: 92px; --sticker-rotate: -8deg; top: 15%; right: -12px; }
+    .sticker-dots { --sticker-size: 86px; --sticker-rotate: 5deg; top: 48%; left: -25px; }
+    .sticker-wave { --sticker-size: 130px; --sticker-rotate: -4deg; top: 76%; right: -35px; }
+    .sticker-butterfly-one { --sticker-size: 68px; --sticker-rotate: 9deg; top: 32%; right: 2%; }
+    .sticker-butterfly-two { --sticker-size: 58px; --sticker-rotate: -7deg; top: 63%; left: 3%; }
+    .ending-sticker { --sticker-size: 62px; --sticker-rotate: 8deg; top: -28px; right: -60px; }
+
+    .journey {
+      position: relative;
+      z-index: 4;
+      width: min(1120px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 5rem 0 8rem;
+    }
+
+    .path-layer {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 0 10px rgba(255, 183, 197, .45));
+    }
+    .path-shadow, .path-progress { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .path-shadow { stroke: rgba(255,255,255,.78); stroke-width: 17; }
+    .path-progress { stroke: url(#path-gradient); stroke-width: 9; }
+
+    .memory {
+      min-height: 460px;
+      display: grid;
+      align-items: center;
+      grid-template-columns: 1fr 1fr;
+      opacity: 0;
+      transform: translateY(42px) rotate(.5deg);
+      transition: opacity .8s ease, transform .9s cubic-bezier(.2,.8,.2,1);
+    }
+    .memory.visible { opacity: 1; transform: translateY(0) rotate(0); }
+    .memory:nth-child(odd) .memory-content { grid-column: 1; justify-self: start; }
+    .memory:nth-child(even) .memory-content { grid-column: 2; justify-self: end; }
+    .memory-content { position: relative; z-index: 2; }
+
+    .story-node {
+      position: relative;
+      z-index: 2;
+      width: min(360px, 88vw);
+      border: 0;
+      padding: 0;
+      color: inherit;
+      text-align: left;
+      background: none;
+      cursor: pointer;
+    }
+    .story-pin {
+      position: absolute;
+      z-index: 3;
+      top: -27px;
+      right: 20px;
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      margin: 0;
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blush), var(--rose));
+      box-shadow: 0 7px 20px rgba(139,58,74,.22), inset 0 0 0 5px rgba(255,255,255,.2);
+      font: 700 1.4rem/1 var(--script);
+      transition: transform .3s ease;
+    }
+    .story-preview {
+      position: relative;
+      z-index: 1;
+      min-height: 138px;
+      padding: 2.75rem 2rem 1.8rem;
+      border: 1px solid rgba(232,213,181,.88);
+      border-radius: 2px;
+      background: rgba(253,245,240,.87);
+      box-shadow: var(--shadow), 7px 7px 0 rgba(255,183,197,.22);
+      /* 兼容修改：移除仅用于装饰的 backdrop-filter 和 clip-path */
+    }
+    .story-preview::after {
+      content: "open me  ♡";
+      position: absolute;
+      right: 1.2rem;
+      bottom: .7rem;
+      color: var(--rose);
+      font: 600 .88rem/1 var(--script);
+    }
+    .story-node:hover .story-pin, .story-node:focus-visible .story-pin { transform: rotate(-8deg) scale(1.09); }
+    .story-node:focus-visible { outline: 2px dashed var(--wine); outline-offset: 8px; border-radius: 4px; }
+    .story-date {
+      position: relative;
+      z-index: 2;
+      display: block;
+      width: calc(100% - 68px);
+      min-height: 1.2em;
+      color: var(--wine);
+      font: 600 .95rem/1.2 var(--script);
+      white-space: nowrap;
+    }
+    .story-title {
+      display: table;
+      margin: .45rem 0 1.5rem;
+      padding: .12rem .45rem .2rem;
+      color: var(--wine);
+      background: linear-gradient(transparent 18%, rgba(255,183,197,.5) 19% 88%, transparent 89%);
+      font: 700 1.5rem/1.25 var(--serif);
+      transform: rotate(-.7deg);
+    }
+
+    /* 故事角贴固定在卡片外侧下方，不再与日期和编号争抢顶部空间 */
+    .memory .memory-content .story-node ~ .memory-sticker {
+      z-index: 1;
+      top: auto;
+      right: -17px;
+      bottom: -18px;
+      left: auto;
+    }
+
+    .polaroid {
+      position: relative;
+      width: min(330px, 82vw);
+      margin: 0;
+      padding: 13px 13px 2.7rem;
+      border: 1px solid rgba(232,213,181,.72);
+      border-radius: 4px;
+      background: #fffaf7;
+      box-shadow: var(--shadow);
+      transform: rotate(var(--tilt, -2deg));
+      transition: transform .45s ease, box-shadow .45s ease;
+    }
+    .polaroid::before {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      width: 92px;
+      height: 25px;
+      top: -14px;
+      left: 50%;
+      background:
+        linear-gradient(90deg, transparent 0 4%, rgba(232,213,181,.78) 5% 95%, transparent 96%),
+        repeating-linear-gradient(90deg, rgba(253,245,240,.12) 0 5px, rgba(139,58,74,.04) 6px 7px);
+      box-shadow: 0 2px 4px rgba(139,58,74,.11);
+      transform: translateX(-50%) rotate(-3deg);
+      opacity: .9;
+      /* 兼容修改：胶带保留矩形纸张效果，不依赖 clip-path */
+    }
+    .polaroid:hover { transform: rotate(0) translateY(-7px); box-shadow: 0 24px 55px rgba(139,58,74,.2); }
+    .photo-wrap {
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      border-radius: 2px;
+      background: linear-gradient(135deg, #ffd3dc, #e8d5b5);
+    }
+    .photo-wrap img { width: 100%; height: 100%; display: block; object-fit: cover; filter: sepia(.13) saturate(.92) contrast(1.03); }
+    .polaroid figcaption { padding: 1rem .4rem 0; text-align: center; color: var(--wine); font: 600 1.05rem/1.2 var(--script); }
+
+    .ending {
+      position: relative;
+      z-index: 4;
+      min-height: 55vh;
+      min-height: 55svh; /* 新单位；上一行是旧浏览器回退 */
+      display: grid;
+      place-items: center;
+      padding: 6rem 1.5rem;
+      text-align: center;
+    }
+    .ending p { margin: 0; color: var(--wine); font: 600 clamp(1.5rem, 5vw, 3rem)/1.3 var(--script); }
+    .ending p::after { content: ""; display: block; width: 74%; margin: 1rem auto 0; border-bottom: 1px dashed var(--gold); }
+
+    body.modal-open { overflow: hidden; }
+
+    /* 故事弹窗遮罩：使用 display none/flex 控制，结构参考 test.html */
+    #story-modal,
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      /* 兼容修改：展开 inset，兼容更早版本的浏览器 */
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 99999 !important;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(91,45,56,.42);
+      /* 兼容修改：移除 backdrop-filter，遮罩颜色仍保证文字清晰 */
+    }
+    #story-modal.show { display: flex; }
+
+    .modal-paper {
+      position: relative;
+      z-index: 100000 !important;
+      width: min(520px, 100%);
+      max-height: 78vh;
+      max-height: min(78svh, 680px); /* 新单位；上一行是旧浏览器回退 */
+      min-height: 260px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 3.5rem 2.6rem 2.7rem;
+      border: 2px solid rgba(139,58,74,.42);
+      border-radius: 5px;
+      color: var(--ink);
+      background:
+        repeating-linear-gradient(transparent 0 34px, rgba(255,183,197,.16) 35px),
+        rgba(253,245,240,.98);
+      box-shadow: 8px 9px 0 rgba(255,183,197,.34), 0 26px 90px rgba(82,30,43,.28);
+    }
+    .modal-paper::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      width: 88px;
+      height: 22px;
+      background: rgba(232,213,181,.68);
+      box-shadow: 0 2px 4px rgba(139,58,74,.1);
+      transform: translateX(-50%) rotate(-2deg);
+      /* 兼容修改：移除胶带装饰的 clip-path */
+    }
+    .modal-close {
+      position: absolute;
+      top: .8rem;
+      right: .8rem;
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 50%;
+      color: var(--wine);
+      background: transparent;
+      cursor: pointer;
+      font-size: 1.5rem;
+    }
+    .modal-close:hover { background: rgba(255,183,197,.2); }
+    #modal-date {
+      display: inline-block;
+      max-width: calc(100% - 52px);
+      padding: .35rem .7rem;
+      color: var(--wine);
+      background: rgba(232,213,181,.45);
+      font: 600 1.1rem/1 var(--script);
+      white-space: nowrap;
+      transform: rotate(-1deg);
+    }
+    #modal-title { margin: .85rem 0 1.3rem; padding-right: 2rem; color: var(--wine); font: 700 2rem/1.2 var(--serif); }
+    #modal-story { position: relative; z-index: 1; margin: 0; line-height: 2.1; }
+
+    @keyframes modal-enter {
+      from { opacity: 0; transform: translateY(24px) rotate(-1deg) scale(.97); }
+      to { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+    }
+
+    .falling { position: fixed; z-index: 10; top: -30px; pointer-events: none; animation: fall var(--duration) linear var(--delay) forwards; opacity: 0; }
+
+    @keyframes fall {
+      0% { opacity: 0; transform: translate3d(0,-20px,0) rotate(0deg); }
+      12% { opacity: .75; }
+      100% { opacity: 0; transform: translate3d(var(--drift),105vh,0) rotate(360deg); }
+    }
+    @keyframes breathe { 50% { opacity: .25; transform: scaleY(.72); } }
+
+    @media (max-width: 720px) {
+      .gate-form { grid-template-columns: 1fr; }
+      .gate-submit { width: 100%; }
+      .gate-heart { --sticker-size: 50px; left: -10px; }
+      .gate-star { --sticker-size: 40px; right: -7px; }
+      .music-player { max-width: 235px; }
+      .music-label { display: none; }
+      .hero { min-height: 86vh; min-height: 86svh; padding-bottom: 6rem; }
+      .journey { width: calc(100% - 1.4rem); padding-top: 2rem; }
+      .memory { min-height: 410px; grid-template-columns: 1fr; }
+      .memory:nth-child(n) .memory-content { grid-column: 1; }
+      .memory:nth-child(odd) .memory-content { justify-self: start; }
+      .memory:nth-child(even) .memory-content { justify-self: end; }
+      .story-node { width: min(310px, 84vw); }
+      .story-pin { width: 56px; height: 56px; top: -23px; right: 14px; }
+      .story-preview { min-height: 132px; padding: 2.5rem 1.4rem 1.8rem; }
+      .story-date { width: calc(100% - 58px); }
+      .polaroid { width: min(285px, 78vw); }
+      .path-shadow { stroke-width: 13; }
+      .path-progress { stroke-width: 7; }
+      .modal-paper { padding: 3.25rem 1.5rem 2.2rem; }
+      .hero-title-sticker { --sticker-size: 46px; right: -28px; top: -24px; }
+      .hero-date-sticker { --sticker-size: 39px; right: -42px; }
+      .hero-ticket { --sticker-size: 82px; left: -18px; top: -88px; }
+      .hero-butterfly { --sticker-size: 49px; right: -10px; top: auto; bottom: -84px; }
+      .hero-sparkles { display: none; }
+      .memory-sticker { --sticker-size: 41px; right: -9px; }
+      .memory:nth-of-type(even) .memory-sticker { left: -9px; }
+      .sticker-camera, .sticker-dots, .sticker-wave, .sticker-butterfly-one, .sticker-butterfly-two { opacity: .48; transform: scale(.78) rotate(var(--sticker-rotate)); }
+      .ending-sticker { --sticker-size: 48px; right: -42px; top: -23px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      #ribbon-canvas, .falling { display: none; }
+      .memory { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body class="gate-locked">
+  <!-- 手绘贴纸图形库：所有元素共用同一调色盘和做旧纸张滤镜 -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden">
+    <defs>
+      <filter id="sticker-texture" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035 0.08" numOctaves="2" seed="17" result="wobble"/>
+        <feDisplacementMap in="SourceGraphic" in2="wobble" scale="1.25" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" seed="7" result="grain"/>
+        <feColorMatrix in="grain" type="saturate" values="0" result="grayGrain"/>
+        <feComposite in="grayGrain" in2="rough" operator="in" result="clippedGrain"/>
+        <feBlend in="rough" in2="clippedGrain" mode="soft-light" result="paper"/>
+        <feDropShadow in="paper" dx="1.6" dy="2.4" stdDeviation="1.5" flood-color="#8B3A4A" flood-opacity="0.24"/>
+      </filter>
+
+      <symbol id="sticker-star" viewBox="0 0 100 100">
+        <path d="M50 8 L61 35 L91 38 L68 57 L75 87 L49 71 L22 88 L30 58 L8 38 L39 35 Z" fill="#E8D5B5" stroke="#8B3A4A" stroke-width="5"/>
+        <path d="M48 17 L54 39 M67 47 L81 44" fill="none" stroke="#FDF5F0" stroke-width="4" opacity=".62"/>
+      </symbol>
+      <symbol id="sticker-heart" viewBox="0 0 100 100">
+        <path d="M50 87 C40 76 12 59 13 35 C14 18 34 13 49 30 C65 11 88 20 87 39 C86 60 63 76 50 87 Z" fill="#FF8A9B" stroke="#8B3A4A" stroke-width="5"/>
+        <path d="M27 31 C32 24 39 25 43 31" fill="none" stroke="#FDF5F0" stroke-width="4" opacity=".58"/>
+      </symbol>
+      <symbol id="sticker-flower" viewBox="0 0 100 100">
+        <path d="M50 46 C30 43 22 30 30 20 C38 11 51 23 52 39 C55 20 70 13 78 23 C87 35 70 47 58 49 C76 51 84 66 75 75 C65 85 52 69 51 57 C47 75 31 84 22 73 C13 61 29 48 43 49 Z" fill="#FFB7C5" stroke="#8B3A4A" stroke-width="4.5"/>
+        <circle cx="51" cy="49" r="11" fill="#E8D5B5" stroke="#8B3A4A" stroke-width="4"/>
+        <path d="M51 60 C55 72 62 81 72 88" fill="none" stroke="#5C6B5A" stroke-width="5"/>
+      </symbol>
+      <symbol id="sticker-camera" viewBox="0 0 100 100">
+        <path d="M15 31 Q16 26 22 26 L36 26 L42 18 Q44 15 49 15 L62 16 Q66 16 68 21 L72 27 L82 28 Q88 28 88 35 L87 76 Q86 82 80 82 L20 81 Q13 80 13 74 Z" fill="#FDF5F0" stroke="#8B3A4A" stroke-width="5"/>
+        <circle cx="51" cy="54" r="18" fill="#5C6B5A" stroke="#8B3A4A" stroke-width="5"/>
+        <circle cx="51" cy="54" r="9" fill="#FFB7C5" stroke="#E8D5B5" stroke-width="3"/>
+        <path d="M23 38 L34 38" stroke="#FF8A9B" stroke-width="6"/>
+      </symbol>
+      <symbol id="sticker-bow" viewBox="0 0 100 100">
+        <path d="M47 42 C35 22 11 18 13 38 C15 56 34 54 47 48 M54 42 C67 22 90 23 88 42 C86 58 67 54 54 48" fill="#FFB7C5" stroke="#8B3A4A" stroke-width="5"/>
+        <path d="M45 51 L31 83 L51 70 L58 84 L57 51" fill="#FF8A9B" stroke="#8B3A4A" stroke-width="5"/>
+        <path d="M43 39 Q51 34 59 41 L58 55 Q50 60 42 54 Z" fill="#E8D5B5" stroke="#8B3A4A" stroke-width="4"/>
+      </symbol>
+      <symbol id="sticker-dots" viewBox="0 0 100 100">
+        <circle cx="22" cy="31" r="7" fill="#FF8A9B" stroke="#8B3A4A" stroke-width="3"/>
+        <circle cx="49" cy="20" r="6" fill="#E8D5B5" stroke="#8B3A4A" stroke-width="3"/>
+        <circle cx="76" cy="35" r="8" fill="#FFB7C5" stroke="#8B3A4A" stroke-width="3"/>
+        <circle cx="33" cy="67" r="6" fill="#5C6B5A" stroke="#8B3A4A" stroke-width="3"/>
+        <circle cx="67" cy="72" r="7" fill="#FF8A9B" stroke="#8B3A4A" stroke-width="3"/>
+      </symbol>
+      <symbol id="sticker-wave" viewBox="0 0 140 70">
+        <path d="M7 36 C21 12 36 60 51 35 C66 10 81 60 96 34 C111 10 124 51 134 31" fill="none" stroke="#FF8A9B" stroke-width="7"/>
+        <path d="M8 50 C24 30 36 67 52 48 C68 29 82 67 98 47 C113 29 125 58 134 44" fill="none" stroke="#E8D5B5" stroke-width="5"/>
+      </symbol>
+      <symbol id="sticker-lips" viewBox="0 0 100 100">
+        <path d="M10 51 C24 47 31 28 47 38 C53 30 69 32 88 49 C70 75 33 78 10 51 Z" fill="#FF8A9B" stroke="#8B3A4A" stroke-width="5"/>
+        <path d="M13 52 C35 54 61 52 86 49 C66 61 37 63 13 52 Z" fill="#8B3A4A" opacity=".78"/>
+        <path d="M31 43 C39 39 44 40 48 43" fill="none" stroke="#FDF5F0" stroke-width="3" opacity=".52"/>
+      </symbol>
+      <symbol id="sticker-butterfly" viewBox="0 0 100 100">
+        <path d="M47 47 C39 22 17 12 12 29 C8 45 25 55 44 53 C26 57 17 75 30 82 C43 89 50 67 50 56" fill="#FFB7C5" stroke="#8B3A4A" stroke-width="4.5"/>
+        <path d="M54 47 C62 22 84 14 89 31 C93 47 75 56 57 53 C75 58 82 76 69 83 C56 89 50 68 51 56" fill="#E8D5B5" stroke="#8B3A4A" stroke-width="4.5"/>
+        <path d="M50 41 C44 49 46 66 51 73 C57 64 57 48 50 41 Z" fill="#5C6B5A" stroke="#8B3A4A" stroke-width="3.5"/>
+        <path d="M48 42 C41 32 36 29 31 28 M53 42 C60 32 65 29 70 28" fill="none" stroke="#8B3A4A" stroke-width="3"/>
+        <path d="M24 32 Q34 34 40 45 M72 33 Q63 35 58 45" fill="none" stroke="#FDF5F0" stroke-width="3" opacity=".65"/>
+      </symbol>
+      <symbol id="sticker-ticket" viewBox="0 0 140 80">
+        <path d="M8 10 Q18 14 23 5 L118 7 Q123 17 133 12 L132 65 Q122 61 117 73 L23 71 Q18 60 8 66 Z" fill="#FDF5F0" stroke="#8B3A4A" stroke-width="4" stroke-dasharray="2 2"/>
+        <path d="M34 12 L32 66 M109 12 L108 68" stroke="#FFB7C5" stroke-width="3" stroke-dasharray="5 5"/>
+        <text x="70" y="34" text-anchor="middle" fill="#8B3A4A" font-size="13" font-family="Georgia,serif" font-weight="700">LOVE CLUB</text>
+        <text x="70" y="52" text-anchor="middle" fill="#FF8A9B" font-size="10" font-family="Arial,sans-serif">ADMIT TWO · FOREVER</text>
+      </symbol>
+      <symbol id="sticker-sparkles" viewBox="0 0 100 100">
+        <path d="M49 7 C51 30 57 40 75 47 C57 51 51 61 48 84 C45 62 39 52 20 47 C39 41 45 31 49 7 Z" fill="#E8D5B5" stroke="#8B3A4A" stroke-width="4"/>
+        <path d="M81 14 C82 24 86 29 94 32 C86 35 82 40 80 50 C78 40 74 35 66 32 C75 29 79 24 81 14 Z" fill="#FFB7C5" stroke="#8B3A4A" stroke-width="3"/>
+        <path d="M18 62 C19 70 22 74 29 77 C22 79 19 83 17 91 C15 83 12 79 6 77 C12 74 16 70 18 62 Z" fill="#FF8A9B" stroke="#8B3A4A" stroke-width="3"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- 进入验证问答：修改问题与提示文字可直接编辑下方内容 -->
+  <div class="answer-gate" id="answer-gate" role="dialog" aria-modal="true" aria-labelledby="gate-question">
+    <div class="gate-card">
+      <svg class="sticker gate-heart" aria-hidden="true"><use href="#sticker-heart"/></svg>
+      <svg class="sticker gate-star" aria-hidden="true"><use href="#sticker-star"/></svg>
+      <h2 class="gate-question" id="gate-question">如果我有一只猫，我会给它取什么名字？</h2>
+      <form class="gate-form" id="gate-form" novalidate>
+        <label for="gate-answer" style="position:absolute;width:1px;height:1px;overflow:hidden">请输入答案</label>
+        <input class="gate-input" id="gate-answer" type="text" placeholder="在这里写下答案…" autocomplete="off" enterkeyhint="done" aria-describedby="gate-error">
+        <button class="gate-submit" type="submit">确认</button>
+      </form>
+      <!-- 输入错误时显示：可在这里修改提示语 -->
+      <p class="gate-error" id="gate-error" role="status" aria-live="polite">不对哦，再想想～ 🐱</p>
+    </div>
+  </div>
+
+  <canvas id="ribbon-canvas" aria-hidden="true"></canvas>
+
+  <!-- 背景音乐播放列表：文件放入 music 文件夹后即可播放 -->
+  <audio id="music-track-1" preload="metadata">
+    <!-- 替换音乐文件：将《愿与愁》音频放入 music 文件夹，修改 src 为对应文件名 -->
+    <source src="music/yuanyuchou.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="music-track-2" preload="metadata">
+    <!-- 替换音乐文件：将《honeybee》音频放入 music 文件夹，修改 src 为对应文件名 -->
+    <source src="music/honeybee.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- 音乐默认暂停，访客主动点击唱片后才会开始播放 -->
+  <div class="music-player" id="music-player">
+    <button class="music-toggle" id="music-toggle" type="button" aria-label="播放背景音乐" aria-pressed="false">
+      <svg class="music-note" viewBox="0 0 28 28" aria-hidden="true">
+        <path d="M11 20 C10 24 4 25 3 21 C2 17 7 15 11 17 L13 7 C13 6 14 5 15 5 L24 3 L23 8 L15 10 L14 20" fill="#FDF5F0" stroke="#8B3A4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M23 17 C22 21 16 22 15 18 C14 14 19 12 23 14" fill="#FFB7C5" stroke="#8B3A4A" stroke-width="2.2"/>
+      </svg>
+    </button>
+    <div class="music-info" aria-live="polite">
+      <span class="music-label" id="music-label">轻触唱片，播放我们的歌</span>
+      <span class="music-title" id="music-title">愿与愁 · 林俊杰</span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <svg class="sticker hero-ticket" aria-hidden="true" viewBox="0 0 140 80"><use href="#sticker-ticket"/></svg>
+      <svg class="sticker hero-butterfly" aria-hidden="true"><use href="#sticker-butterfly"/></svg>
+      <svg class="sticker hero-sparkles" aria-hidden="true"><use href="#sticker-sparkles"/></svg>
+      <p class="eyebrow">happy birthday my forever one</p>
+      <!-- 修改纪念网页的大标题 -->
+      <div class="title-wrap">
+        <h1>The Apple of My Eye</h1>
+        <svg class="sticker hero-title-sticker" aria-hidden="true"><use href="#sticker-star"/></svg>
+      </div>
+      <!-- 修改你们的纪念日 -->
+      <div><span class="date-wrap">
+        <p class="date-range">2026.01.01 — ∞</p>
+        <svg class="sticker hero-date-sticker" aria-hidden="true"><use href="#sticker-bow"/></svg>
+      </span></div>
+    </div>
+    <div class="scroll-note" aria-hidden="true">start our journey</div>
+  </header>
+
+  <main class="journey" id="journey">
+    <!-- 页面边缘的剪贴簿装饰，均不遮挡内容 -->
+    <svg class="sticker journey-sticker sticker-camera" aria-hidden="true"><use href="#sticker-camera"/></svg>
+    <svg class="sticker journey-sticker sticker-dots" aria-hidden="true"><use href="#sticker-dots"/></svg>
+    <svg class="sticker journey-sticker sticker-wave" aria-hidden="true" viewBox="0 0 140 70"><use href="#sticker-wave"/></svg>
+    <svg class="sticker journey-sticker sticker-butterfly-one" aria-hidden="true"><use href="#sticker-butterfly"/></svg>
+    <svg class="sticker journey-sticker sticker-butterfly-two" aria-hidden="true"><use href="#sticker-butterfly"/></svg>
+    <!-- 这条 SVG 路径会在 JS 中根据内容高度自动绘制 -->
+    <svg class="path-layer" id="path-svg" aria-hidden="true" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="path-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffb7c5"/>
+          <stop offset=".48" stop-color="#ff8a9b"/>
+          <stop offset="1" stop-color="#e8d5b5"/>
+        </linearGradient>
+      </defs>
+      <path class="path-shadow" id="path-shadow"/>
+      <path class="path-progress" id="path-progress"/>
+    </svg>
+
+    <!-- 故事节点：修改 data-date、data-title、data-story 即可替换弹窗内容 -->
+    <section class="memory">
+      <div class="memory-content">
+        <button class="story-node" type="button" data-date="2026.01.01" data-title="第一次牵手" data-story="我最后一次狂欢节，你是我最好的新年礼物">
+          <span class="story-pin">01</span>
+          <span class="story-preview"><span class="story-date">2026.01.01</span><strong class="story-title">第一次牵手</strong></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: 2.5deg">
+          <div class="photo-wrap">
+            <!-- 部署前隐私提醒：请手动清理所有照片中的 EXIF、GPS、设备型号和拍摄时间数据 -->
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="geiwoxiedexin.jpg" alt="我们的第一张纪念照片占位图" loading="lazy">
+          </div>
+          <figcaption>2026.04.13 my favourite letter from you</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: -3deg">
+          <div class="photo-wrap">
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="firstpolaroid.jpg" alt="一起散步的纪念照片占位图" loading="lazy">
+          </div>
+          <figcaption>2026.05.05 my favourite polaroid</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <button class="story-node" type="button" data-date="2026.03.23" data-title="一束不会凋谢的花" data-story="你在我生日送我的花永远在我的记忆中绽放">
+          <span class="story-pin">02</span>
+          <span class="story-preview"><span class="story-date">2026.03.23</span><strong class="story-title">一束不会凋谢的花</strong></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: 1.8deg">
+          <div class="photo-wrap">
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="xieyanpailide.jpg" alt="约会纪念照片占位图" loading="lazy">
+          </div>
+          <figcaption>2026.05.05 double dating</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <button class="story-node" type="button" data-date="2026.03.08" data-title="拍立得" data-story="想用照片留住时间，不过你一定永远在我身边">
+          <span class="story-pin">03</span>
+          <span class="story-preview"><span class="story-date">2026.03.08</span><strong class="story-title">拍立得</strong></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: -2.2deg">
+          <div class="photo-wrap">
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="paidezuihaodeyizhang.jpg" alt="旅行纪念照片占位图" loading="lazy">
+          </div>
+          <figcaption>black</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: 3deg">
+          <div class="photo-wrap">
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="zaisushehoumiandeyizhang.jpg" alt="日常纪念照片占位图" loading="lazy">
+          </div>
+          <figcaption>purple</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <button class="story-node" type="button" data-date="2026.05.20" data-title="你的眼泪" data-story="我的爱不止于某个瞬间，不停留于某一张信纸">
+          <span class="story-pin">04</span>
+          <span class="story-preview"><span class="story-date">2026.05.20</span><strong class="story-title">你的眼泪</strong></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: -1.5deg">
+          <div class="photo-wrap">
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="hewodekuromi.jpg" alt="快乐时刻照片占位图" loading="lazy">
+          </div>
+          <figcaption>red</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <button class="story-node" type="button" data-date="2026.07.15" data-title="今天，和很多个明天" data-story="喜欢你看到这个礼物会由衷的喜欢，今天的我，明天的我，同样爱你">
+          <span class="story-pin">05</span>
+          <span class="story-preview"><span class="story-date">2026.07.15</span><strong class="story-title">今天，和很多个明天</strong></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="memory">
+      <div class="memory-content">
+        <figure class="polaroid" style="--tilt: 2deg">
+          <div class="photo-wrap">
+            <!-- 替换照片：将照片放入 images 文件夹，修改 src 为对应文件名 -->
+            <img src="datouzhao.jpg" alt="生日纪念照片占位图" loading="lazy">
+          </div>
+          <figcaption>wine red</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <footer class="ending">
+    <!-- 在下方横线处填写男朋友的名字 -->
+    <span class="ending-wrap">
+      <p>Happy Birthday, my forever one</p>
+      <svg class="sticker ending-sticker" aria-hidden="true"><use href="#sticker-lips"/></svg>
+    </span>
+  </footer>
+
+  <script>
+    /* JavaScript 兼容修改：使用 var、传统函数和字符串拼接，避免新语法解析失败 */
+    document.addEventListener("DOMContentLoaded", function () {
+    (function () {
+      "use strict";
+
+      var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var journey = document.querySelector("#journey");
+      var pathSvg = document.querySelector("#path-svg");
+      var pathShadow = document.querySelector("#path-shadow");
+      var pathProgress = document.querySelector("#path-progress");
+      var memories = Array.prototype.slice.call(document.querySelectorAll(".memory"));
+      var pathLength = 0;
+
+      // 进入验证逻辑：正确答案为“布丁”，前后空格会被忽略
+      var answerGate = document.querySelector("#answer-gate");
+      var gateForm = document.querySelector("#gate-form");
+      var gateInput = document.querySelector("#gate-answer");
+      var gateError = document.querySelector("#gate-error");
+
+      window.requestAnimationFrame(function () { gateInput.focus(); });
+      gateForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var answer = gateInput.value.trim().toLocaleLowerCase("zh-CN");
+
+        if (answer === "布丁") {
+          gateError.classList.remove("is-visible");
+          answerGate.classList.add("is-leaving");
+          document.body.classList.remove("gate-locked");
+          createFallingDecorations();
+          window.setTimeout(function () {
+            if (answerGate.parentNode) answerGate.parentNode.removeChild(answerGate);
+          }, reduceMotion ? 20 : 680);
+          return;
+        }
+
+        gateInput.value = "";
+        gateError.classList.add("is-visible");
+        gateInput.classList.remove("is-wrong");
+        void gateInput.offsetWidth;
+        gateInput.classList.add("is-wrong");
+        gateInput.focus();
+      });
+
+      // 双曲循环播放：第一首结束播放第二首，第二首结束回到第一首
+      var musicPlayer = document.querySelector("#music-player");
+      var musicToggle = document.querySelector("#music-toggle");
+      var musicLabel = document.querySelector("#music-label");
+      var musicTitle = document.querySelector("#music-title");
+      var playlist = [
+        { audio: document.querySelector("#music-track-1"), title: "愿与愁 · 林俊杰" },
+        { audio: document.querySelector("#music-track-2"), title: "honeybee · Olivia Rodrigo" }
+      ];
+      var currentTrack = 0;
+      var musicPlaying = false;
+      var musicAttempted = false;
+
+      function updateMusicUI() {
+        if (musicPlaying) musicPlayer.classList.add("is-playing");
+        else musicPlayer.classList.remove("is-playing");
+        musicToggle.setAttribute("aria-pressed", String(musicPlaying));
+        musicToggle.setAttribute("aria-label", musicPlaying ? "暂停背景音乐" : "播放背景音乐");
+        musicLabel.textContent = musicPlaying ? "now playing" : "音乐已暂停";
+        musicTitle.textContent = playlist[currentTrack].title;
+      }
+
+      function playCurrentTrack() {
+        musicAttempted = true;
+        var currentAudio = playlist[currentTrack].audio;
+        var playResult;
+
+        function handlePlaySuccess() {
+          musicPlaying = true;
+          updateMusicUI();
+        }
+
+        function handlePlayError(error) {
+          musicPlaying = false;
+          updateMusicUI();
+          musicLabel.textContent = currentAudio.error ? "音乐文件加载失败" : "点击后仍无法播放";
+          if (window.console && console.warn) console.warn("背景音乐播放失败：", error);
+        }
+
+        try {
+          // 如果页面打开时音乐尚未放入文件夹，点击播放时主动重新加载文件
+          if (currentAudio.error || currentAudio.readyState === HTMLMediaElement.HAVE_NOTHING) {
+            currentAudio.load();
+          }
+          playResult = currentAudio.play();
+          if (playResult && typeof playResult.then === "function") {
+            playResult.then(handlePlaySuccess).catch(handlePlayError);
+          } else {
+            handlePlaySuccess();
+          }
+        } catch (error) {
+          handlePlayError(error);
+        }
+      }
+
+      function pauseMusic() {
+        playlist[currentTrack].audio.pause();
+        musicPlaying = false;
+        updateMusicUI();
+      }
+
+      function playNextTrack() {
+        playlist[currentTrack].audio.pause();
+        playlist[currentTrack].audio.currentTime = 0;
+        currentTrack = (currentTrack + 1) % playlist.length;
+        playCurrentTrack();
+      }
+
+      playlist.forEach(function (track) {
+        track.audio.addEventListener("ended", playNextTrack);
+        track.audio.addEventListener("error", function () {
+          if (musicAttempted && track.audio === playlist[currentTrack].audio) {
+            musicPlaying = false;
+            updateMusicUI();
+            musicLabel.textContent = "请先添加音乐文件";
+          }
+        });
+      });
+
+      musicToggle.addEventListener("click", function () {
+        if (musicPlaying) pauseMusic();
+        else playCurrentTrack();
+      });
+
+      // 为每个故事或照片节点轮流贴上同一套爱心、星星、花朵角贴
+      var cornerStickers = ["heart", "star", "flower"];
+      var stickerRotations = [-8, 6, -4, 9, -6, 4, -9, 7, -3, 8, -5, 5];
+      memories.forEach(function (memory, index) {
+        var content = memory.querySelector(".memory-content");
+        var type = cornerStickers[index % cornerStickers.length];
+        content.style.position = "relative";
+        content.insertAdjacentHTML("beforeend", '<svg class="sticker memory-sticker" style="--sticker-rotate:' + stickerRotations[index % stickerRotations.length] + 'deg" aria-hidden="true"><use href="#sticker-' + type + '"/></svg>');
+      });
+
+      // 根据页面宽度生成左右摆动的日记路径，手机端摆幅会自动缩小
+      function buildJourneyPath() {
+        var width = journey.clientWidth;
+        var height = journey.scrollHeight;
+        var center = width / 2;
+        var swing = Math.min(width * .29, 310);
+        var sections = memories.length;
+        var step = height / sections;
+        var d = "M " + center + " 0";
+
+        for (var i = 0; i < sections; i++) {
+          var y1 = i * step;
+          var y2 = (i + 1) * step;
+          var direction = i % 2 === 0 ? 1 : -1;
+          d += " C " + (center + direction * swing) + " " + (y1 + step * .32) + ", " + (center + direction * swing) + " " + (y1 + step * .7) + ", " + center + " " + y2;
+        }
+
+        pathSvg.setAttribute("viewBox", "0 0 " + width + " " + height);
+        pathShadow.setAttribute("d", d);
+        pathProgress.setAttribute("d", d);
+        pathLength = pathProgress.getTotalLength();
+        pathProgress.style.strokeDasharray = pathLength;
+        updatePathProgress();
+      }
+
+      // 滚动时让粉金路径像被慢慢画出来
+      function updatePathProgress() {
+        if (!pathLength) return;
+        var rect = journey.getBoundingClientRect();
+        var travel = window.innerHeight - rect.top;
+        var progress = Math.max(0, Math.min(1, travel / (rect.height + window.innerHeight * .25)));
+        pathProgress.style.strokeDashoffset = pathLength * (1 - progress);
+      }
+
+      // IntersectionObserver 兼容修改：不支持时直接显示全部内容
+      if ("IntersectionObserver" in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) entry.target.classList.add("visible");
+          });
+        }, { threshold: .18 });
+        memories.forEach(function (memory) {
+          observer.observe(memory);
+        });
+      } else {
+        memories.forEach(function (memory) {
+          memory.classList.add("visible");
+        });
+      }
+
+      // 故事弹窗：内容来自每个按钮上的 data 属性
+      var modal = document.querySelector("#story-modal");
+      var modalDate = document.querySelector("#modal-date");
+      var modalTitle = document.querySelector("#modal-title");
+      var modalStory = document.querySelector("#modal-story");
+      var lastTrigger = null;
+
+      Array.prototype.forEach.call(document.querySelectorAll(".story-node"), function (node) {
+        node.addEventListener("click", function () {
+          lastTrigger = node;
+          modalDate.textContent = node.dataset.date;
+          modalTitle.textContent = node.dataset.title;
+          modalStory.textContent = node.dataset.story;
+          modal.classList.add("show");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("modal-open");
+          document.querySelector(".modal-close").focus();
+        });
+      });
+
+      function closeStoryModal() {
+        if (!modal.classList.contains("show")) return;
+        modal.classList.remove("show");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+        if (lastTrigger) lastTrigger.focus();
+      }
+
+      document.querySelector(".modal-close").addEventListener("click", closeStoryModal);
+      modal.addEventListener("click", function (event) {
+        if (event.target === modal) closeStoryModal();
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeStoryModal();
+      });
+
+      // 占位图加载失败时隐藏破图图标，保留下方的粉金渐变色块
+      Array.prototype.forEach.call(document.querySelectorAll(".photo-wrap img"), function (image) {
+        image.addEventListener("error", function () { image.style.display = "none"; });
+      });
+
+      // Canvas 跟随丝带：只保留少量轨迹点，兼顾手机端性能
+      var canvas = document.querySelector("#ribbon-canvas");
+      var ctx = canvas.getContext("2d");
+      var points = [];
+      var maxPoints = window.innerWidth < 720 ? 18 : 28;
+      var dpr = 1;
+      var drawing = false;
+      var frameId = 0;
+
+      function resizeCanvas() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        buildJourneyPath();
+      }
+
+      function addPoint(x, y) {
+        drawing = true;
+        points.push({ x, y, life: 1 });
+        if (points.length > maxPoints) points.shift();
+        if (!frameId) frameId = requestAnimationFrame(drawRibbon);
+      }
+
+      function smoothPath() {
+        if (points.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (var i = 1; i < points.length - 1; i++) {
+          var mx = (points[i].x + points[i + 1].x) / 2;
+          var my = (points[i].y + points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(points[i].x, points[i].y, mx, my);
+        }
+        var last = points[points.length - 1];
+        ctx.lineTo(last.x, last.y);
+      }
+
+      function drawRibbon() {
+        frameId = 0;
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        if (points.length < 2) return;
+
+        var first = points[0];
+        var last = points[points.length - 1];
+        var gradient = ctx.createLinearGradient(first.x, first.y, last.x, last.y);
+        gradient.addColorStop(0, "rgba(255,183,197,0)");
+        gradient.addColorStop(.55, "rgba(255,138,155,.6)");
+        gradient.addColorStop(1, "rgba(232,213,181,.9)");
+
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = window.innerWidth < 720 ? 8 : 12;
+        smoothPath();
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(255,255,255,.45)";
+        ctx.lineWidth = 2;
+        smoothPath();
+        ctx.stroke();
+
+        if (!drawing) points.shift();
+        drawing = false;
+        if (points.length > 1) frameId = requestAnimationFrame(drawRibbon);
+      }
+
+      if (!reduceMotion) {
+        window.addEventListener("pointermove", function (event) { addPoint(event.clientX, event.clientY); }, { passive: true });
+        window.addEventListener("pointerdown", function (event) { addPoint(event.clientX, event.clientY); }, { passive: true });
+      }
+
+      // 开场装饰：数量少、仅播放一次，避免长期占用性能
+      function createFallingDecorations() {
+        if (reduceMotion) return;
+        var symbols = ["♡", "✦", "·", "♡", "✧"];
+        for (var i = 0; i < 14; i++) {
+          var item = document.createElement("span");
+          item.className = "falling";
+          item.textContent = symbols[i % symbols.length];
+          item.style.left = (4 + Math.random() * 92) + "%";
+          item.style.color = i % 3 === 0 ? "#c69b55" : "#ff8a9b";
+          item.style.fontSize = (12 + Math.random() * 13) + "px";
+          item.style.setProperty("--duration", (5 + Math.random() * 4) + "s");
+          item.style.setProperty("--delay", (Math.random() * 3) + "s");
+          item.style.setProperty("--drift", (-45 + Math.random() * 90) + "px");
+          item.addEventListener("animationend", function (event) {
+            var target = event.currentTarget;
+            if (target.parentNode) target.parentNode.removeChild(target);
+          });
+          document.body.appendChild(item);
+        }
+      }
+
+      var resizeTimer;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resizeCanvas, 120);
+      });
+      window.addEventListener("scroll", updatePathProgress, { passive: true });
+      window.addEventListener("load", buildJourneyPath);
+
+      resizeCanvas();
+    })();
+    });
+  </script>
+  <div class="modal-overlay" id="story-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title">
+    <div class="modal-paper">
+      <button class="modal-close" type="button" aria-label="关闭故事">×</button>
+      <div id="modal-date"></div>
+      <h2 id="modal-title"></h2>
+      <p id="modal-story"></p>
+    </div>
+  </div>
+</body>
+</html>
